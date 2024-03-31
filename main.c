@@ -2,13 +2,31 @@
 #include<string.h>
 #include<stdlib.h>
 #include <ctype.h>
+#include <time.h>
+
+
+
+#define MAX_WORDS 26
+#define MAX_WORD_LENGTH 50
+
+// Struct to hold response data
+struct ResponseData {
+    char* data;
+    size_t size;
+};
 
 int* checkIfGuessedLetter(char word_to_guess[], char guessed_letters[], char guessed_letter);
 int* findCharIndexesInString(const char *str, char ch, int *count);
+void getRandomWord(char* word_to_guess);
 
-int main() {
+int main(int argc, char *argv[]) {
 
-    // 
+    int debug_mode = 0;
+    
+    // Check for debug flag
+    if (argc > 1 && strcmp(argv[1], "-D") == 0) {
+        debug_mode = 1;
+    }
 
     // Init game states
     char *gamestates[]={
@@ -68,8 +86,18 @@ int main() {
     // Init guesses
     int guesses = gamestates_length - 1;
 
-    //TODO Get random word from API (make sure its lower case)
-    char word_to_guess[] = "test";
+    // Get random word from API (make sure its lower case)
+    char word_to_guess[MAX_WORD_LENGTH];
+    getRandomWord(word_to_guess);
+
+    if(word_to_guess == NULL) {
+        printf("Error getting random word from API\n");
+        return -1;
+    }
+
+    if(debug_mode) {
+        printf("Word to guess: %s\n", word_to_guess);
+    }
 
     int word_to_guess_length = strlen(word_to_guess);
 
@@ -158,6 +186,8 @@ int* checkIfGuessedLetter(char word_to_guess[], char guessed_letters[], char gue
         &countOfIdxInWordToGuess
     );
 
+
+
     return indexesInWordToGuess;
 }
 
@@ -171,7 +201,7 @@ int* findCharIndexesInString(const char *str, char ch, int *count) {
     indexes = (int*)malloc(len * sizeof(int));
     if (indexes == NULL) {
         *count = 0;
-        return NULL; // Memory allocation failed
+        return NULL;
     }
 
     // Loop through the string to find the indexes
@@ -181,8 +211,10 @@ int* findCharIndexesInString(const char *str, char ch, int *count) {
         }
     }
 
+    printf("index count %d\n", index_count);
+
     // Resize the memory to fit the actual number of indexes found
-    indexes = realloc(indexes, index_count * sizeof(int));
+    indexes = realloc(indexes, (index_count + 1) * sizeof(int));
     if (indexes == NULL && index_count > 0) {
         *count = 0;
         return NULL;
@@ -192,5 +224,37 @@ int* findCharIndexesInString(const char *str, char ch, int *count) {
     return indexes;
 }
 
+// Get random word
+void getRandomWord(char word_to_guess[]) {
 
-//TODO Get random word from API or file
+    FILE *file;
+    char words[MAX_WORDS][MAX_WORD_LENGTH];
+    int word_count = 0;
+    char word[MAX_WORD_LENGTH];
+    int random_index;
+    
+    // Open the file
+    file = fopen("banana.txt", "r");
+    if (file == NULL) {
+        printf("Error opening file.\n");
+        return;
+    }
+    
+    // Read words from the file into the array
+    while (fscanf(file, "%s", word) != EOF && word_count < MAX_WORDS) {
+        strcpy(words[word_count], word);
+        word_count++;
+    }
+    
+    // Close the file
+    fclose(file);
+    
+    // Seed the random number generator
+    srand(time(NULL));
+    
+    // Generate a random index within the range of the array
+    random_index = rand() % word_count;
+
+   // Copy the randomly selected word to the provided array
+    strcpy(word_to_guess, words[random_index]);
+}
