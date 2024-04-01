@@ -4,8 +4,6 @@
 #include <ctype.h>
 #include <time.h>
 
-
-
 #define MAX_WORDS 26
 #define MAX_WORD_LENGTH 50
 
@@ -15,7 +13,7 @@ struct ResponseData {
     size_t size;
 };
 
-int* checkIfGuessedLetter(char word_to_guess[], char guessed_letters[], char guessed_letter);
+int* checkIfGuessedLetter(char word_to_guess[], char guessed_letters[], char guessed_letter, int *count);
 int* findCharIndexesInString(const char *str, char ch, int *count);
 void getRandomWord(char* word_to_guess);
 
@@ -128,16 +126,17 @@ int main(int argc, char *argv[]) {
         // Make sure its lower case
         curr_guessed_letter = tolower(curr_guessed_letter);
 
+        // Init count of guessed letters
+        int count_guessed_letters;
+
         // Get the guessed indexes
-        int* guessed_indexes = checkIfGuessedLetter(word_to_guess, guessed_letters, curr_guessed_letter);
+        int* guessed_indexes = checkIfGuessedLetter(word_to_guess, guessed_letters, curr_guessed_letter, &count_guessed_letters);
 
         // If guessed correct => put the chars in the guessed_letters and check if won
         if(guessed_indexes != NULL && guessed_indexes[0] != -1) {
 
-            int guessed_indexes_length = sizeof(guessed_indexes) / sizeof(guessed_indexes[0]);
-
             // Loop through the indexes and put the chars in the guessed_letters
-            for(int i = 0; i < guessed_indexes_length; i++) {
+            for(int i = 0; i < count_guessed_letters; i++) {
                 guessed_letters[guessed_indexes[i]] = curr_guessed_letter;
             }
 
@@ -160,7 +159,7 @@ int main(int argc, char *argv[]) {
 }
 
 // Check if guessed letter correctly
-int* checkIfGuessedLetter(char word_to_guess[], char guessed_letters[], char guessed_letter) {
+int* checkIfGuessedLetter(char word_to_guess[], char guessed_letters[], char guessed_letter, int *count) {
 
     int countOfIdxInGuessedLetters;
 
@@ -176,17 +175,12 @@ int* checkIfGuessedLetter(char word_to_guess[], char guessed_letters[], char gue
         return NULL;
     }
 
-    // Find the indexes in the word to guess
-    int countOfIdxInWordToGuess;
-
     // Check if guessed letter is already in guessed letters
     int* indexesInWordToGuess = findCharIndexesInString(
         word_to_guess,
         guessed_letter,
-        &countOfIdxInWordToGuess
+        count
     );
-
-
 
     return indexesInWordToGuess;
 }
@@ -211,10 +205,8 @@ int* findCharIndexesInString(const char *str, char ch, int *count) {
         }
     }
 
-    printf("index count %d\n", index_count);
-
     // Resize the memory to fit the actual number of indexes found
-    indexes = realloc(indexes, (index_count + 1) * sizeof(int));
+    indexes = realloc(indexes, index_count * sizeof(int));
     if (indexes == NULL && index_count > 0) {
         *count = 0;
         return NULL;
@@ -234,7 +226,7 @@ void getRandomWord(char word_to_guess[]) {
     int random_index;
     
     // Open the file
-    file = fopen("banana.txt", "r");
+    file = fopen("words.txt", "r");
     if (file == NULL) {
         printf("Error opening file.\n");
         return;
